@@ -21,7 +21,7 @@ ENV GODEBUG="netdns=go http2server=0"
 RUN make BUILD_VERSION=${BUILD_VERSION}
 
 FROM phusion/baseimage:0.11
-LABEL maintainer="github.com/subspacecommunity/subspace"
+LABEL maintainer="github.com/xjodoin/subspace"
 
 COPY --from=build  /src/subspace-linux-amd64 /usr/bin/subspace
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
