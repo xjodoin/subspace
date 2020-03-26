@@ -190,7 +190,7 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 			if token := samlSP.GetAuthorizationToken(r); token != nil {
 				r = r.WithContext(samlsp.WithToken(r.Context(), token))
 
-				email := token.Attributes.Get("Email")
+				email := token.Attributes.Get("emailaddress")
 				if email == "" {
 					Error(w, fmt.Errorf("SAML token missing email"))
 					return
