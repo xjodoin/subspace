@@ -187,10 +187,11 @@ func WebHandler(h func(*Web), section string) httprouter.Handle {
 
 		// Needs a new session.
 		if samlSP != nil {
+
 			if token := samlSP.GetAuthorizationToken(r); token != nil {
 				r = r.WithContext(samlsp.WithToken(r.Context(), token))
 
-				email := token.Attributes.Get("emailaddress")
+				email := token.Attributes.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress")
 				if email == "" {
 					Error(w, fmt.Errorf("SAML token missing email"))
 					return
