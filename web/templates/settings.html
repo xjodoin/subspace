@@ -1,0 +1,150 @@
+{{template "header.html" .}}
+
+<div class="ui hidden divider"></div>
+
+<div class="ui container">
+    <div class="ui padded segment">
+        {{with $success := $.Request.FormValue "success"}}
+            <div class="ui large info message">
+                <div class="header">
+                    {{if eq $success "settings"}}
+                        Settings saved successfully
+                    {{else if eq $success "removeprofile"}}
+                        Device removed successfully
+                    {{else if eq $success "configured"}}
+                        Admin account is setup. Configure SAML for SSO (optional).
+                    {{else if eq $success "totp"}}
+                        TOTP reset for default user, please reconfigure for improved security.
+                    {{end}}
+                </div>
+                <a class="close-link" href="/settings"><i class="close icon"></i></a>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+        {{with $error := .Request.FormValue "error"}}
+            <div class="ui large negative message">
+                <div class="content">
+                    <div class="header">
+                        {{if eq $error "invalid"}}
+                            Invalid. Please try again.
+                        {{else if eq $error "totp"}}
+                            Error Resetting totp settings.
+                        {{else}}
+                            Error. Please try again.
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+        {{end}}
+
+        <form class="ui huge form" action="/settings" method="POST" novalidate autocomplete="off">
+            <div class="ui {{$.SemanticTheme}} dividing header">Single Sign-On (SAML)</div>
+            <div class="ui message">
+                <i class="info circle grey icon"></i>
+                To enable Single Sign-On using SAML add a custom SAML app in your identity provider's admin panel, then copy/paste the IDP metadata XML below.
+                <div class="large ui list">
+                    <a class="item" target="_blank" rel="noopener noreferrer" href="https://support.google.com/a/answer/6087519?hl=en"><i class="right triangle icon"></i>Instructions for G Suite users</a>
+                    <a class="item" target="_blank" rel="noopener noreferrer" href="https://developer.okta.com/standards/SAML/setting_up_a_saml_application_in_okta/"><i class="right triangle icon"></i>Instructions for Okta users</a>
+                    <a class="item" target="_blank" rel="noopener noreferrer" href="https://docs.microsoft.com/en-us/azure/active-directory/manage-apps/configure-single-sign-on-non-gallery-applications"><i class="right triangle icon"></i>Instructions for Azure AD users</a>
+                    <a class="item" target="_blank" rel="noopener noreferrer" href="https://support.jumpcloud.com/support/s/article/getting-started-applications-saml-sso2"><i class="right triangle icon"></i>Instructions for JumpCloud users</a>
+                </div>
+            </div>
+            <div class="ui hidden divider"></div>
+
+            <div class="field">
+                <div class="ui small header">Your ACS URL</div>
+                <input class="readonly-input" type="text" value="https://{{$.Request.Host}}/saml/acs" readonly>
+            </div>
+            <div class="field">
+                <div class="ui small header">Your Entity ID</div>
+                <input class="readonly-input" type="text" value="https://{{$.Request.Host}}/saml/metadata" readonly>
+            </div>
+            <div class="field">
+                <div class="ui small header">IDP Metadata</div>
+                <textarea rows="10" name="saml_metadata" placeholder="Enable single sign-on by entering the SAML metadata from your SSO provider.">{{$.Info.SAML.IDPMetadata}}</textarea>
+            </div>
+            <div class="ui hidden divider"></div>
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <div class="two ui buttons">
+                        <a href="/" class="ui huge button">Cancel</a>
+                        <button type="submit" class="ui huge {{$.SemanticTheme}} button">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui hidden section divider"></div>
+
+            <div class="ui {{$.SemanticTheme}} dividing header">Admin Account: Reset Password</div>
+            <div class="ui hidden divider"></div>
+            <div class="field">
+                <div class="ui small header">Email Address</div>
+                <input name="email" type="email" placeholder="Email Address" value="{{$.Info.Email}}">
+            </div>
+            <div class="field">
+                <div class="ui small header">Current Password</div>
+                <input name="current_password" type="password" placeholder="Current Password" value="">
+            </div>
+            <div class="field">
+                <div class="ui small header">New Password</div>
+                <input name="new_password" type="password" placeholder="New Password" value="">
+            </div>
+            <div class="ui hidden divider"></div>
+            <div class="equal width fields">
+                <div class="field mobile hidden">&nbsp;</div>
+                <div class="field">
+                    <div class="two ui buttons">
+                        <a href="/" class="ui huge button">Cancel</a>
+                        <button type="submit" class="ui huge {{$.SemanticTheme}} button">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ui hidden section divider"></div>
+            {{if and $.Admin $.Info.TotpKey}}
+
+                <div class="ui {{$.SemanticTheme}} dividing header">Admin Account: Reset TOTP</div>
+                <div class="ui hidden divider"></div>
+                <input type="hidden" name="reset_totp" value="true"/>
+                <div class="equal width fields">
+                    <div class="field mobile hidden">&nbsp;</div>
+                    <div class="field">
+                        <div class="two ui buttons">
+                            <a href="/" class="ui huge button">Cancel</a>
+                            <button type="submit" class="ui huge red button">Remove Totp</button>
+                        </div>
+                    </div>
+                </div>
+            {{else}}
+                <div class="ui {{$.SemanticTheme}} dividing header">Admin Account: Setup MFA</div>
+                <div class="ui hidden divider"></div>
+                <div class="ui text container">Scan the below with your Authenticator App of choice (Google Authenticator, Authy etc...) and then put the code into the input box below</div>
+                <div class="ui hidden divider"></div>
+                <div class="ui centered segment">
+                    <div class="ui bottom attached label">Secret: {{$.TempTotpKey.Secret}}</div>
+                    <img class="ui centered image" src="/totp/image" alt="TOTP qr-code could not be displayed">
+                </div>
+                <div class="ui hidden divider"></div>
+                <div class="field">
+                    <div class="ui small header">TOTP Code</div>
+                    <input name="totp_code" type="text" placeholder="totp key" value="">
+                </div>
+                <div class="ui hidden divider"></div>
+                <div class="equal width fields">
+                    <div class="field mobile hidden">&nbsp;</div>
+                    <div class="field">
+                        <div class="two ui buttons">
+                            <a href="/" class="ui huge button">Cancel</a>
+                            <button type="submit" class="ui huge {{$.SemanticTheme}} button">Save</button>
+                        </div>
+                    </div>
+                </div>
+            {{end}}
+        </form>
+    </div>
+</div>
+
+{{template "footer.html" .}}
